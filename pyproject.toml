@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-parameterized"
-version = "0.2.1"
+version = "0.0.1"
 description = "A powerful parameterized testing tool for pytest with type-hint based auto-generation, customizers, and custom generators"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Min3953", email = "alsrb3093@kaist.ac.kr"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
