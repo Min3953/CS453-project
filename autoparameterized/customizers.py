@@ -72,3 +72,16 @@ class TransformCustomizer(Customizer):
             raise TypeError("transform must be a string or callable")
 
         self.transform = transform
+
+    def customize(self, value):
+        if callable(self.transform):
+            return self.transform(value)
+
+        if not hasattr(value, self.transform):
+            return value
+
+        transform = getattr(value, self.transform)
+        if not callable(transform):
+            return value
+
+        return transform()
