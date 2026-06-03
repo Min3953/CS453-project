@@ -1,6 +1,7 @@
 from autoparameterized.customizers import (
     ChainCustomizer,
     LengthCustomizer,
+    RegexStringCustomizer,
     TransformCustomizer,
 )
 
@@ -108,3 +109,20 @@ def test_chain_customizer_rejects_invalid_customizer():
         pass
     else:
         raise AssertionError("Expected TypeError for invalid customizer")
+
+
+def test_regex_string_customizer_rejects_invalid_config():
+    invalid_configs = (
+        {"pattern": 123},
+        {"pattern": "["},
+        {"pattern": "[A-Z]+", "fallback": 123},
+        {"pattern": "[A-Z]+", "fallback": "abc"},
+    )
+
+    for config in invalid_configs:
+        try:
+            RegexStringCustomizer(**config)
+        except (TypeError, ValueError):
+            pass
+        else:
+            raise AssertionError(f"Expected error for {config}")
