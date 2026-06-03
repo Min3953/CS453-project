@@ -150,3 +150,9 @@ def test_type_cast_customizer_rejects_invalid_target_type():
             pass
         else:
             raise AssertionError(f"Expected TypeError for {target_type}")
+
+
+def test_type_cast_customizer_converts_values():
+    assert TypeCastCustomizer(int).customize("3") == 3
+    assert TypeCastCustomizer(str).customize(3) == "3"
+    assert TypeCastCustomizer(float).customize("2.5") == 2.5
