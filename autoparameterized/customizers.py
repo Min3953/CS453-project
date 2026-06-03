@@ -129,3 +129,12 @@ class RegexStringCustomizer(Customizer):
             raise ValueError("fallback must match the pattern")
 
         self.fallback = fallback
+
+    def customize(self, value):
+        if not isinstance(value, str):
+            return value
+
+        if self.pattern.fullmatch(value):
+            return value
+
+        return self.fallback
