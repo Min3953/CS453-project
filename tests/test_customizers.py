@@ -3,6 +3,7 @@ from autoparameterized.customizers import (
     LengthCustomizer,
     RegexStringCustomizer,
     TransformCustomizer,
+    TypeCastCustomizer,
 )
 
 
@@ -139,3 +140,13 @@ def test_regex_string_customizer_keeps_non_string_value():
     customizer = RegexStringCustomizer("[A-Z]+", fallback="ABC")
 
     assert customizer.customize(123) == 123
+
+
+def test_type_cast_customizer_rejects_invalid_target_type():
+    for target_type in (bool, list, "int"):
+        try:
+            TypeCastCustomizer(target_type)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError(f"Expected TypeError for {target_type}")
