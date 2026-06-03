@@ -126,3 +126,10 @@ def test_regex_string_customizer_rejects_invalid_config():
             pass
         else:
             raise AssertionError(f"Expected error for {config}")
+
+
+def test_regex_string_customizer_matches_or_uses_fallback():
+    customizer = RegexStringCustomizer("[A-Z]{3}", fallback="ABC")
+
+    assert customizer.customize("XYZ") == "XYZ"
+    assert customizer.customize("bad") == "ABC"
