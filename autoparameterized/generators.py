@@ -85,5 +85,3 @@ class RangeCustomizer(Customizer):
 # ============================================================================
 # TODO: Implement additional customizers
 # ============================================================================
-
-# TODO: ChainCustomizer - compose multiple customizers
