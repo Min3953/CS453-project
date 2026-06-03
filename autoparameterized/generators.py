@@ -407,5 +407,4 @@ class DataclassGenerator(TypeGenerator):
 # TODO: Implement additional customizers
 # ============================================================================
 
-# TODO: TransformCustomizer - apply transformations (upper, lower, etc.)
 # TODO: ChainCustomizer - compose multiple customizers
