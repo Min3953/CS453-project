@@ -133,3 +133,9 @@ def test_regex_string_customizer_matches_or_uses_fallback():
 
     assert customizer.customize("XYZ") == "XYZ"
     assert customizer.customize("bad") == "ABC"
+
+
+def test_regex_string_customizer_keeps_non_string_value():
+    customizer = RegexStringCustomizer("[A-Z]+", fallback="ABC")
+
+    assert customizer.customize(123) == 123
