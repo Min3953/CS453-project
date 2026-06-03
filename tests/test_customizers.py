@@ -1,6 +1,7 @@
 from autoparameterized.customizers import (
     ChainCustomizer,
     LengthCustomizer,
+    NonEmptyCustomizer,
     RegexStringCustomizer,
     TransformCustomizer,
     TypeCastCustomizer,
@@ -161,3 +162,10 @@ def test_type_cast_customizer_converts_values():
 def test_type_cast_customizer_handles_failed_conversion():
     assert TypeCastCustomizer(int).customize("bad") == "bad"
     assert TypeCastCustomizer(int, fallback=0).customize("bad") == 0
+
+
+def test_non_empty_customizer_replaces_empty_string():
+    customizer = NonEmptyCustomizer(default_string="x")
+
+    assert customizer.customize("") == "x"
+    assert customizer.customize("abc") == "abc"
