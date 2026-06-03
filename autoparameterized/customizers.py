@@ -104,3 +104,9 @@ class ChainCustomizer(Customizer):
         for customizer in self.customizers:
             value = customizer.customize(value)
         return value
+
+
+class RegexStringCustomizer(Customizer):
+    """
+    Customizer that keeps strings matching a regex pattern.
+    """
