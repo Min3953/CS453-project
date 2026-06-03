@@ -161,3 +161,9 @@ class TypeCastCustomizer(Customizer):
             if self.fallback is not None:
                 return self.fallback
             return value
+
+
+class NonEmptyCustomizer(Customizer):
+    """
+    Customizer that replaces empty strings/lists with defaults.
+    """
