@@ -406,5 +406,3 @@ class DataclassGenerator(TypeGenerator):
 # ============================================================================
 # TODO: Implement additional customizers
 # ============================================================================
-
-# TODO: ChainCustomizer - compose multiple customizers
