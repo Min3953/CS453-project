@@ -85,3 +85,17 @@ class TransformCustomizer(Customizer):
             return value
 
         return transform()
+
+
+class ChainCustomizer(Customizer):
+    """
+    Customizer that composes multiple customizers in order.
+    """
+
+    def __init__(self, *customizers):
+        for customizer in customizers:
+            customize = getattr(customizer, "customize", None)
+            if not callable(customize):
+                raise TypeError("customizers must have a customize method")
+
+        self.customizers = customizers
