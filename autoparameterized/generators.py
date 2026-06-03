@@ -7,6 +7,7 @@ Team members should create similar generators for other types.
 
 import random
 import string
+from datetime import datetime, timedelta
 from .base import TypeGenerator, Customizer
 
 
@@ -75,11 +76,77 @@ class RangeCustomizer(Customizer):
 # TODO: Implement additional generators
 # ============================================================================
 
-# TODO: FloatGenerator - similar to IntGenerator but for floats
-# TODO: BoolGenerator - random boolean values
+class FloatGenerator(TypeGenerator):
+    """
+    Generator for floating-point values.
+
+    Constraints:
+        - min_value: Minimum value (default: 0.0)
+        - max_value: Maximum value (default: 100.0)
+    """
+
+    def generate(self) -> float:
+        if self.seed is not None:
+            random.seed(self.seed)
+
+        min_val = self.constraints.get('min_value', 0.0)
+        max_val = self.constraints.get('max_value', 100.0)
+        return random.uniform(min_val, max_val)
+
+
+class BoolGenerator(TypeGenerator):
+    """
+    Generator for boolean values.
+
+    Constraints:
+        - probability: Probability of generating True (default: 0.5)
+    """
+
+    def generate(self) -> bool:
+        if self.seed is not None:
+            random.seed(self.seed)
+
+        probability = self.constraints.get('probability', 0.5)
+        return random.random() < probability
+
+
 # TODO: ListGenerator - generate lists of elements
 # TODO: DictGenerator - generate dictionaries
-# TODO: DateTimeGenerator - generate datetime objects
+class DateTimeGenerator(TypeGenerator):
+    """
+    Generator for datetime values.
+
+    Constraints:
+        - min_value: Earliest datetime (default: 1970-01-01 00:00:00)
+        - max_value: Latest datetime (default: 2030-12-31 23:59:59)
+        - start: Alias for min_value
+        - end: Alias for max_value
+    """
+
+    DEFAULT_START = datetime(1970, 1, 1)
+    DEFAULT_END = datetime(2030, 12, 31, 23, 59, 59)
+
+    def generate(self) -> datetime:
+        if self.seed is not None:
+            random.seed(self.seed)
+
+        start = self.constraints.get(
+            'min_value',
+            self.constraints.get('start', self.DEFAULT_START),
+        )
+        end = self.constraints.get(
+            'max_value',
+            self.constraints.get('end', self.DEFAULT_END),
+        )
+
+        if end < start:
+            raise ValueError("max_value must be greater than or equal to min_value")
+
+        span_seconds = (end - start).total_seconds()
+        offset_seconds = random.uniform(0, span_seconds)
+        return start + timedelta(seconds=offset_seconds)
+
+
 # TODO: DataclassGenerator - recursively generate dataclass instances
 
 # ============================================================================
