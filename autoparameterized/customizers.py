@@ -153,3 +153,11 @@ class TypeCastCustomizer(Customizer):
 
         self.target_type = target_type
         self.fallback = fallback
+
+    def customize(self, value):
+        try:
+            return self.target_type(value)
+        except (TypeError, ValueError):
+            if self.fallback is not None:
+                return self.fallback
+            return value
