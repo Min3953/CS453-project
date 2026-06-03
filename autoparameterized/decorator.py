@@ -5,7 +5,26 @@ This is a skeleton implementation showing the overall structure.
 Team members should complete the TODOs.
 """
 
+from datetime import datetime
 from typing import Callable, get_type_hints
+
+from .base import TypeGenerator
+from .generators import (
+    BoolGenerator,
+    DateTimeGenerator,
+    FloatGenerator,
+    IntGenerator,
+    StringGenerator,
+)
+
+
+_GENERATOR_REGISTRY = {
+    int: IntGenerator,
+    str: StringGenerator,
+    float: FloatGenerator,
+    bool: BoolGenerator,
+    datetime: DateTimeGenerator,
+}
 
 
 def autosource(count: int = 10, seed: int = None, **param_constraints):
@@ -107,8 +126,12 @@ def get_generator_for_type(param_type, constraints: dict, seed: int):
     Returns:
         TypeGenerator instance
     """
-    # TODO: Implement type resolution logic
-    pass
+    generator_class = _GENERATOR_REGISTRY.get(param_type)
+
+    if generator_class is None:
+        raise TypeError(f"No generator registered for type: {param_type!r}")
+
+    return generator_class(constraints=constraints, seed=seed)
 
 
 # ============================================================================
@@ -125,9 +148,11 @@ def register_generator(target_type):
             def generate(self):
                 return MyClass(...)
     """
-    # TODO: Implement registry decorator
     def decorator(generator_class):
-        # Store in global registry
+        if not isinstance(generator_class, type) or not issubclass(generator_class, TypeGenerator):
+            raise TypeError("generator_class must be a TypeGenerator subclass")
+
+        _GENERATOR_REGISTRY[target_type] = generator_class
         return generator_class
     return decorator
 
