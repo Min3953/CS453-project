@@ -138,3 +138,9 @@ class RegexStringCustomizer(Customizer):
             return value
 
         return self.fallback
+
+
+class TypeCastCustomizer(Customizer):
+    """
+    Customizer that casts values to a target type.
+    """
