@@ -42,7 +42,7 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
             type_cls: The type to register for
             generator_class: The generator class to use
         """
-        pass
+        self._generators[type_cls] = generator_class
 
     def resolve(self, param_type, constraints: dict = None, seed: Optional[int] = None) -> TypeGenerator:
         """
