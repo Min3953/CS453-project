@@ -93,6 +93,11 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
     from .resolver import create_resolver
     resolver = create_resolver()
 
+    # Register custom generators if specified
+    if hasattr(func, '_custom_generators'):
+        for type_cls, gen_class in func._custom_generators.items():
+            resolver.register(type_cls, gen_class)
+
     # For count=1, create dual-mode wrapper that supports both direct calls and pytest parametrize
     if count == 1:
         import functools
@@ -172,19 +177,41 @@ def _parse_constraints_for_param(param_name: str, param_constraints: dict) -> di
 # Registry system
 # ============================================================================
 
-def register_generator(target_type):
+def register_generator(target_type, generator_class):
     """
-    Decorator to register a custom generator for a type.
+    Decorator to register a custom generator for a specific test.
+
+    This decorator allows overriding the default generator for a type
+    within a specific test function. Multiple decorators can be stacked
+    to override multiple types.
+
+    Important: Must be placed BELOW @autosource decorator (runs first).
 
     Usage:
-        @register_generator(MyClass)
-        class MyClassGenerator(TypeGenerator):
-            def generate(self):
-                return MyClass(...)
+        @autosource
+        @register_generator(int, CustomIntGenerator)
+        def test_function(value: int):
+            pass
+
+        # Multiple custom generators
+        @autosource
+        @register_generator(int, CustomIntGenerator)
+        @register_generator(str, CustomStrGenerator)
+        def test_function(a: int, b: str):
+            pass
+
+    Args:
+        target_type: The type to override (e.g., int, str)
+        generator_class: The custom generator class to use
+
+    Returns:
+        Decorator function
     """
-    def decorator(generator_class):
-        # TODO: Store in global registry
-        return generator_class
+    def decorator(func):
+        if not hasattr(func, '_custom_generators'):
+            func._custom_generators = {}
+        func._custom_generators[target_type] = generator_class
+        return func
     return decorator
 
 

@@ -9,8 +9,9 @@ import random
 import pytest
 from typing import List
 
+from autoparameterized.base import TypeGenerator
 from autoparameterized.generators import ListGenerator
-from autoparameterized.decorator import autosource
+from autoparameterized.decorator import autosource, register_generator
 
 
 def test_if_sut_generates_int_list_correctly():
@@ -199,3 +200,19 @@ def test_if_sut_generates_list_of_lists_correctly(list_of_lists: List[List[int]]
 
         for actual in actual_list:
             assert isinstance(actual, int)
+
+class PositiveEvenNumberGenerator(TypeGenerator):
+    def generate(self) -> int:
+        import random
+        positive_number = random.randint(0, 1_000_000_000)
+        return positive_number - (positive_number % 2)
+
+@autosource
+@register_generator(int, PositiveEvenNumberGenerator)
+def test_if_sut_generates_list_of_elements_with_given_generator_correctly(numbers: List[int]):
+    assert isinstance(numbers, list)
+    assert len(numbers) == 3
+    for actual in numbers:
+        assert isinstance(actual, int)
+        assert actual >= 0
+        assert (actual % 2) == 0
