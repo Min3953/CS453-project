@@ -105,7 +105,7 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         }
 
         # Extract element-specific constraints
-        element_constraints = {k: v for k, v in constraints.items() if k not in ['size']}
+        element_constraints = {k: v for k, v in constraints.items() if k not in ['size', 'element_type']}
         if element_constraints:
             list_constraints['element_constraints'] = element_constraints
 

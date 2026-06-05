@@ -69,28 +69,62 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
     Returns:
         Wrapped function
     """
-    if count == 1:
-        # Single execution: wrap function to inject values at runtime
-        return _create_injection_wrapper(func, seed, param_constraints)
-    else:
-        # Multiple executions: generate N sets of values and use pytest.mark.parametrize
-        try:
-            import pytest
-        except ImportError:
-            raise ImportError(
-                "pytest is required for count > 1. "
-                "Install with: pip install pytest"
-            )
+    # Generate N sets of values and use pytest.mark.parametrize
+    try:
+        import pytest
+    except ImportError:
+        raise ImportError(
+            "pytest is required for @autosource. "
+            "Install with: pip install pytest"
+        )
 
-        # Extract type hints
-        type_hints = get_type_hints(func)
-        param_names = [name for name in type_hints.keys() if name != 'return']
+    # Extract type hints
+    type_hints = get_type_hints(func)
+    param_names = [name for name in type_hints.keys() if name != 'return']
 
-        # If no parameters, just run the function count times
-        if not param_names:
+    # If no parameters, handle based on count
+    if not param_names:
+        if count == 1:
+            return func  # No need to do anything
+        else:
             return pytest.mark.parametrize('_dummy', range(count))(func)
 
-        # Generate N sets of values
+    # Create resolver once for all type resolution
+    from .resolver import create_resolver
+    resolver = create_resolver()
+
+    # For count=1, create dual-mode wrapper that supports both direct calls and pytest parametrize
+    if count == 1:
+        import functools
+
+        @functools.wraps(func)
+        def dual_mode_wrapper(*args, **kwargs):
+            if args or kwargs:
+                # Called with arguments (by pytest parametrize)
+                return func(*args, **kwargs)
+            else:
+                # Called without arguments (direct call) - generate values
+                generated_kwargs = {}
+                for param_name in param_names:
+                    param_type = type_hints[param_name]
+                    constraints = _parse_constraints_for_param(param_name, param_constraints)
+                    generator = resolver.resolve(param_type, constraints, seed)
+                    generated_kwargs[param_name] = generator.generate()
+                return func(**generated_kwargs)
+
+        # Generate one test case for pytest
+        values = []
+        for param_name in param_names:
+            param_type = type_hints[param_name]
+            constraints = _parse_constraints_for_param(param_name, param_constraints)
+            generator = resolver.resolve(param_type, constraints, seed)
+            values.append(generator.generate())
+        test_cases = [tuple(values) if len(values) > 1 else values[0]]
+
+        # Apply parametrize to the dual-mode wrapper
+        return pytest.mark.parametrize(','.join(param_names), test_cases)(dual_mode_wrapper)
+    else:
+        # For count > 1, generate N test cases
         test_cases = []
         for i in range(count):
             effective_seed = seed + i if seed is not None else None
@@ -98,43 +132,12 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
             for param_name in param_names:
                 param_type = type_hints[param_name]
                 constraints = _parse_constraints_for_param(param_name, param_constraints)
-                generator = get_generator_for_type(param_type, constraints, effective_seed)
+                generator = resolver.resolve(param_type, constraints, effective_seed)
                 values.append(generator.generate())
             test_cases.append(tuple(values) if len(values) > 1 else values[0])
 
         # Apply pytest.mark.parametrize
         return pytest.mark.parametrize(','.join(param_names), test_cases)(func)
-
-
-def _create_injection_wrapper(func: Callable, seed: Optional[int], param_constraints: dict):
-    """
-    Create a wrapper that injects generated values at runtime.
-    Used for count=1 only.
-    """
-    import functools
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # Extract type hints
-        type_hints = get_type_hints(func)
-
-        # Generate values for each parameter
-        generated_kwargs = {}
-        for param_name, param_type in type_hints.items():
-            if param_name == 'return':
-                continue
-
-            # Parse constraints for this parameter
-            constraints = _parse_constraints_for_param(param_name, param_constraints)
-
-            # Get generator and generate value
-            generator = get_generator_for_type(param_type, constraints, seed)
-            generated_kwargs[param_name] = generator.generate()
-
-        # Call original function with generated parameters
-        return func(**generated_kwargs)
-
-    return wrapper
 
 
 # ============================================================================
@@ -163,42 +166,6 @@ def _parse_constraints_for_param(param_name: str, param_constraints: dict) -> di
             constraints[constraint_name] = value
 
     return constraints
-
-
-def get_generator_for_type(param_type, constraints: dict, seed: Optional[int]):
-    """
-    Map a Python type to its corresponding generator.
-
-    Steps:
-        1. Check if type is Optional[T] -> extract T
-        2. Check if type is List[T] -> use ListGenerator with element_type
-        3. Check if type is a dataclass -> use DataclassGenerator
-        4. Check custom registry -> use registered generator
-        5. Use built-in generator mapping (int->IntGenerator, etc.)
-
-    Args:
-        param_type: The type to generate values for
-        constraints: Constraints to pass to generator
-        seed: Random seed
-
-    Returns:
-        TypeGenerator instance
-    """
-    # Import generators
-    from .generators import IntGenerator, StringGenerator
-
-    # Simple type mapping for now
-    type_map = {
-        int: IntGenerator,
-        str: StringGenerator,
-    }
-
-    generator_class = type_map.get(param_type)
-    if generator_class:
-        return generator_class(constraints=constraints, seed=seed)
-
-    # TODO: Handle Optional[T], List[T], dataclass, custom types
-    raise TypeError(f"No generator found for type {param_type}")
 
 
 # ============================================================================
