@@ -1,94 +1,171 @@
 """
-Core decorator for automatic parameterization (SKELETON).
+Core decorator for automatic parameterization.
 
-This is a skeleton implementation showing the overall structure.
-Team members should complete the TODOs.
+@autosource decorator automatically generates test parameters from type hints.
+- Without count: test runs once with generated values
+- With count: test runs N times with different values
 """
 
-from typing import Callable, get_type_hints
+from typing import Callable, Optional, get_type_hints
 
 
-def autosource(count: int = 10, seed: int = None, **param_constraints):
+def autosource(
+    func: Optional[Callable] = None,
+    *,
+    count: Optional[int] = None,
+    seed: Optional[int] = None,
+    **param_constraints
+):
     """
-    Decorator that automatically generates test parameters from type hints.
-
-    Args:
-        count: Number of test cases to generate
-        seed: Random seed for reproducibility
-        **param_constraints: Constraints in format param__constraint=value
-            Example: age__min_value=18, age__max_value=65
+    Automatically generate test parameters from type hints.
 
     Usage:
-        @autosource(count=5, seed=42, age__min_value=18, age__max_value=100)
+        # Single execution
+        @autosource
         def test_function(age: int, name: str):
-            assert 18 <= age <= 100
-            assert isinstance(name, str)
+            assert age > 0
 
-    Implementation steps:
-        1. Extract type hints from function
-        2. Parse param_constraints to map to each parameter
-        3. For each test case (count times):
-           - For each parameter:
-             - Get appropriate generator for the type
-             - Generate value with constraints
-        4. Wrap with pytest.mark.parametrize
+        # Multiple executions (property-based testing)
+        @autosource(count=10, seed=42, age__min_value=18)
+        def test_function(age: int):
+            assert age >= 18
+
+    Args:
+        func: Test function (when used without parentheses)
+        count: Number of times to run test (default: 1)
+        seed: Random seed for reproducibility
+        **param_constraints: Constraints in format param__constraint=value
+
+    Returns:
+        Decorated test function
     """
 
-    def decorator(func: Callable) -> Callable:
-        # TODO: Step 1 - Extract type hints
-        # Hint: use get_type_hints(func)
+    # Determine if used with or without parentheses
+    if func is not None:
+        # @autosource (no parentheses) -> single execution
+        return _create_wrapper(func, count=1, seed=seed, param_constraints=param_constraints)
+    else:
+        # @autosource(...) (with parentheses)
+        def decorator(f: Callable) -> Callable:
+            if count is None:
+                # No count specified -> single execution
+                return _create_wrapper(f, count=1, seed=seed, param_constraints=param_constraints)
+            else:
+                # Count specified -> multiple executions
+                return _create_wrapper(f, count=count, seed=seed, param_constraints=param_constraints)
+        return decorator
+
+
+def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_constraints: dict):
+    """
+    Create wrapper that injects generated values.
+
+    Args:
+        func: Original test function
+        count: Number of executions (1 for single, N for multiple)
+        seed: Random seed
+        param_constraints: Parameter constraints
+
+    Returns:
+        Wrapped function
+    """
+    if count == 1:
+        # Single execution: wrap function to inject values at runtime
+        return _create_injection_wrapper(func, seed, param_constraints)
+    else:
+        # Multiple executions: generate N sets of values and use pytest.mark.parametrize
+        try:
+            import pytest
+        except ImportError:
+            raise ImportError(
+                "pytest is required for count > 1. "
+                "Install with: pip install pytest"
+            )
+
+        # Extract type hints
+        type_hints = get_type_hints(func)
+        param_names = [name for name in type_hints.keys() if name != 'return']
+
+        # If no parameters, just run the function count times
+        if not param_names:
+            return pytest.mark.parametrize('_dummy', range(count))(func)
+
+        # Generate N sets of values
+        test_cases = []
+        for i in range(count):
+            effective_seed = seed + i if seed is not None else None
+            values = []
+            for param_name in param_names:
+                param_type = type_hints[param_name]
+                constraints = _parse_constraints_for_param(param_name, param_constraints)
+                generator = get_generator_for_type(param_type, constraints, effective_seed)
+                values.append(generator.generate())
+            test_cases.append(tuple(values) if len(values) > 1 else values[0])
+
+        # Apply pytest.mark.parametrize
+        return pytest.mark.parametrize(','.join(param_names), test_cases)(func)
+
+
+def _create_injection_wrapper(func: Callable, seed: Optional[int], param_constraints: dict):
+    """
+    Create a wrapper that injects generated values at runtime.
+    Used for count=1 only.
+    """
+    import functools
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Extract type hints
         type_hints = get_type_hints(func)
 
-        # TODO: Step 2 - Parse param_constraints
-        # Format: "param__constraint" -> {param: {constraint: value}}
-        # Example: "age__min_value" -> {'age': {'min_value': ...}}
-        constraints_by_param = {}
-        # ... parsing logic here ...
-
-        # TODO: Step 3 - Generate test cases
-        param_names = []
-        param_values = []
-
+        # Generate values for each parameter
+        generated_kwargs = {}
         for param_name, param_type in type_hints.items():
             if param_name == 'return':
                 continue
-            param_names.append(param_name)
 
-        # Generate 'count' test cases
-        for i in range(count):
-            test_case = []
-            case_seed = seed + i if seed is not None else None
+            # Parse constraints for this parameter
+            constraints = _parse_constraints_for_param(param_name, param_constraints)
 
-            for param_name in param_names:
-                param_type = type_hints[param_name]
-                constraints = constraints_by_param.get(param_name, {})
+            # Get generator and generate value
+            generator = get_generator_for_type(param_type, constraints, seed)
+            generated_kwargs[param_name] = generator.generate()
 
-                # TODO: Get generator for param_type
-                # generator = get_generator_for_type(param_type, constraints, case_seed)
-                # value = generator.generate()
+        # Call original function with generated parameters
+        return func(**generated_kwargs)
 
-                # PLACEHOLDER: For now, just append None
-                value = None
-                test_case.append(value)
-
-            param_values.append(tuple(test_case) if len(test_case) > 1 else test_case[0])
-
-        # TODO: Step 4 - Wrap with pytest.mark.parametrize
-        # import pytest
-        # argnames = ','.join(param_names)
-        # return pytest.mark.parametrize(argnames, param_values)(func)
-
-        # PLACEHOLDER: Return function unchanged for now
-        return func
-
-    return decorator
+    return wrapper
 
 
 # ============================================================================
-# TODO: Implement helper functions
+# Helper functions
 # ============================================================================
 
-def get_generator_for_type(param_type, constraints: dict, seed: int):
+def _parse_constraints_for_param(param_name: str, param_constraints: dict) -> dict:
+    """
+    Parse constraints for a specific parameter.
+
+    Extracts constraints in format: param__constraint -> constraint
+
+    Args:
+        param_name: Name of the parameter
+        param_constraints: All constraints dict
+
+    Returns:
+        Dict of constraints for this parameter
+    """
+    constraints = {}
+    prefix = f"{param_name}__"
+
+    for key, value in param_constraints.items():
+        if key.startswith(prefix):
+            constraint_name = key[len(prefix):]
+            constraints[constraint_name] = value
+
+    return constraints
+
+
+def get_generator_for_type(param_type, constraints: dict, seed: Optional[int]):
     """
     Map a Python type to its corresponding generator.
 
@@ -107,12 +184,25 @@ def get_generator_for_type(param_type, constraints: dict, seed: int):
     Returns:
         TypeGenerator instance
     """
-    # TODO: Implement type resolution logic
-    pass
+    # Import generators
+    from .generators import IntGenerator, StringGenerator
+
+    # Simple type mapping for now
+    type_map = {
+        int: IntGenerator,
+        str: StringGenerator,
+    }
+
+    generator_class = type_map.get(param_type)
+    if generator_class:
+        return generator_class(constraints=constraints, seed=seed)
+
+    # TODO: Handle Optional[T], List[T], dataclass, custom types
+    raise TypeError(f"No generator found for type {param_type}")
 
 
 # ============================================================================
-# TODO: Implement registry system
+# Registry system
 # ============================================================================
 
 def register_generator(target_type):
@@ -125,15 +215,14 @@ def register_generator(target_type):
             def generate(self):
                 return MyClass(...)
     """
-    # TODO: Implement registry decorator
     def decorator(generator_class):
-        # Store in global registry
+        # TODO: Store in global registry
         return generator_class
     return decorator
 
 
 # ============================================================================
-# TODO: Implement helper decorators
+# Helper decorators
 # ============================================================================
 
 def with_customizer(param_name: str, customizer):
@@ -146,8 +235,12 @@ def with_customizer(param_name: str, customizer):
         def test_function(age: int):
             pass
     """
-    # TODO: Attach customizer to function metadata
-    pass
+    def decorator(func):
+        if not hasattr(func, '_customizers'):
+            func._customizers = {}
+        func._customizers[param_name] = customizer
+        return func
+    return decorator
 
 
 def freeze_param(param_name: str, value):
@@ -160,5 +253,9 @@ def freeze_param(param_name: str, value):
         def test_function(value: int, multiplier: int):
             pass
     """
-    # TODO: Attach frozen value to function metadata
-    pass
+    def decorator(func):
+        if not hasattr(func, '_frozen_params'):
+            func._frozen_params = {}
+        func._frozen_params[param_name] = value
+        return func
+    return decorator
