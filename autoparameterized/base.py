@@ -4,7 +4,7 @@ Base interfaces for type-hint based automatic parameterization.
 This module defines the core contracts that all components must follow.
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 
 class TypeGenerator:
@@ -84,3 +84,46 @@ class Customizer:
             The transformed value
         """
         return value
+
+
+class TypeGeneratorResolver:
+    """
+    Interface for resolving types to their appropriate generators.
+
+    Implementations handle the mapping from Python types (int, str, List[T], etc.)
+    to generator instances that can produce values of those types.
+
+    Used by:
+        - @autosource decorator
+        - Recursive generators (ListGenerator, DictGenerator, etc.)
+    """
+
+    def resolve(self, param_type, constraints: dict = None, seed: Optional[int] = None) -> TypeGenerator:
+        """
+        Resolve a type to its generator instance.
+
+        Args:
+            param_type: The type to resolve (e.g., int, str, List[int])
+            constraints: Optional constraints for the generator
+            seed: Optional random seed for reproducibility
+
+        Returns:
+            TypeGenerator instance capable of generating values of param_type
+
+        Raises:
+            ValueError: If no generator can be found for the type
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} must implement resolve()")
+
+    def register(self, type_cls, generator_class: Type[TypeGenerator]):
+        """
+        Register a custom generator for a type.
+
+        Args:
+            type_cls: The type to register for
+            generator_class: The generator class to use
+
+        Note:
+            Not all implementations may support registration.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} must implement register()")
