@@ -10,6 +10,7 @@ import pytest
 from typing import List
 
 from autoparameterized.generators import ListGenerator
+from autoparameterized.decorator import autosource
 
 
 def test_if_sut_generates_int_list_correctly():
@@ -78,8 +79,7 @@ def test_if_sut_generates_integers_satisfying_given_min_max_constraints():
 
     # Assert
     for actualElement in actual:
-        assert actualElement > min_value
-        assert actualElement < max_value
+        assert min_value <= actualElement <= max_value
 
 
 def test_if_sut_generates_string_list_correctly():
@@ -112,7 +112,8 @@ def test_if_sut_generates_strings_of_which_lengths_are_10_by_default():
 
 def test_if_sut_generates_given_length_of_strings_correctly():
     # Arrange
-    constraints = {'element_type': str}
+    length = random.randint(1, 10)
+    constraints = {'element_type': str, 'element_constraints': {'length': length}}
     sut = ListGenerator(constraints = constraints)
 
     # Act
@@ -120,7 +121,7 @@ def test_if_sut_generates_given_length_of_strings_correctly():
 
     # Assert
     for actualElement in actual:
-        assert len(actualElement) == 10
+        assert len(actualElement) == length
 
 
 def test_if_sut_generates_strings_by_default_if_no_element_type_is_specified():
@@ -155,3 +156,46 @@ def __todo_test_if_sut_generates_list_of_complex_objects():
     assert len(actual) == 3
     for actualElement in actual:
         assert isinstance(actualElement, ComplexObject)
+
+
+@autosource
+def test_if_sut_generates_int_list_by_decorator_without_constraints_correctly(numbers: List[int]):
+    assert isinstance(numbers, list)
+    assert len(numbers) == 3
+    for actual in numbers:
+        assert isinstance(actual, int)
+
+
+@autosource(numbers__size = 5, numbers__min_value = -10, numbers__max_value = 10)
+def test_if_sut_generates_int_list_by_decorator_with_given_constraints_correctly(numbers: List[int]):
+    assert isinstance(numbers, list)
+    assert len(numbers) == 5
+    for actual in numbers:
+        assert isinstance(actual, int)
+        assert -10 <= actual <= 10
+
+@autosource
+def test_if_sut_generates_str_list_by_decorator_without_constraints_correctly(strings: List[str]):
+    assert isinstance(strings, list)
+    assert len(strings) == 3
+    for actual in strings:
+        assert isinstance(actual, str)
+
+
+@autosource(strings__size = 5, strings__length = 15)
+def test_if_sut_generates_str_list_by_decorator_with_given_constraints_correctly(strings: List[str]):
+    assert isinstance(strings, list)
+    assert len(strings) == 5
+    for actual in strings:
+        assert isinstance(actual, str)
+        assert len(actual) == 15
+
+@autosource
+def test_if_sut_generates_list_of_lists_correctly(list_of_lists: List[List[int]]):
+    assert isinstance(list_of_lists, list)
+    assert len(list_of_lists) == 3
+    for actual_list in list_of_lists:
+        assert isinstance(actual_list, list)
+
+        for actual in actual_list:
+            assert isinstance(actual, int)
