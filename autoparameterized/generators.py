@@ -7,6 +7,8 @@ Team members should create similar generators for other types.
 
 import random
 import string
+import typing
+
 from .base import TypeGenerator, Customizer
 
 
@@ -50,6 +52,40 @@ class StringGenerator(TypeGenerator):
         return ''.join(random.choices(charset, k=length))
 
 
+class ListGenerator(TypeGenerator):
+    """
+    Generator for list values with typed elements.
+
+    Delegates element generation to the appropriate type generator.
+
+    Constraints:
+        - size: Number of elements (default: 3)
+        - element_type: Type of elements (default: str)
+        - element_constraints: Constraints for element generator (dict)
+    """
+
+    def generate(self) -> typing.List:
+        """
+        Generate a list of elements by delegating to element generator.
+
+        Returns:
+            List of generated values
+        """
+        size = self.constraints.get('size', 3)
+        element_type = self.constraints.get('element_type', str)  # default to str
+        element_constraints = self.constraints.get('element_constraints', {})
+
+        # Delegate to appropriate generator based on type
+        if element_type == int:
+            gen = IntGenerator(constraints=element_constraints, seed=self.seed)
+        elif element_type == str:
+            gen = StringGenerator(constraints=element_constraints, seed=self.seed)
+        else:
+            raise ValueError(f"Unsupported element_type: {element_type}")
+
+        return [gen.generate() for _ in range(size)]
+
+
 # ============================================================================
 # DEMO: Simple Customizer
 # ============================================================================
@@ -77,7 +113,6 @@ class RangeCustomizer(Customizer):
 
 # TODO: FloatGenerator - similar to IntGenerator but for floats
 # TODO: BoolGenerator - random boolean values
-# TODO: ListGenerator - generate lists of elements
 # TODO: DictGenerator - generate dictionaries
 # TODO: DateTimeGenerator - generate datetime objects
 # TODO: DataclassGenerator - recursively generate dataclass instances
