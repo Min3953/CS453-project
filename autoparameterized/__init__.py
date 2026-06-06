@@ -10,6 +10,7 @@ from .base import TypeGenerator, Customizer
 
 # Demo implementations (REFERENCE ONLY)
 from .generators import (
+    FloatGenerator,
     IntGenerator,
     StringGenerator,
     RangeCustomizer,
@@ -29,6 +30,7 @@ __all__ = [
     "TypeGenerator",
     "Customizer",
     # Demo implementations
+    "FloatGenerator",
     "IntGenerator",
     "StringGenerator",
     "RangeCustomizer",
