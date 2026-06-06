@@ -11,6 +11,7 @@ from .base import TypeGenerator, Customizer
 # Demo implementations (REFERENCE ONLY)
 from .generators import (
     BoolGenerator,
+    DataclassGenerator,
     DateTimeGenerator,
     DictGenerator,
     FloatGenerator,
@@ -34,6 +35,7 @@ __all__ = [
     "Customizer",
     # Demo implementations
     "BoolGenerator",
+    "DataclassGenerator",
     "DateTimeGenerator",
     "DictGenerator",
     "FloatGenerator",

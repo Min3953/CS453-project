@@ -4,6 +4,7 @@ Type resolution implementation.
 Provides registry-based type → generator mapping.
 """
 
+import dataclasses
 import typing
 from datetime import datetime
 from typing import Optional, Type
@@ -85,6 +86,10 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         if origin is dict or param_type is dict:
             # Handle Dict[K, V]
             return self._resolve_dict(param_type, constraints, seed)
+
+        if self._is_dataclass_type(param_type):
+            # Handle dataclass types
+            return self._resolve_dataclass(param_type, constraints, seed)
 
         # Simple type lookup
         if param_type in self._generators:
@@ -174,6 +179,35 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
 
         # Pass self as resolver so DictGenerator uses the same resolver instance
         return DictGenerator(constraints=dict_constraints, seed=seed, resolver=self)
+
+    def _resolve_dataclass(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve a dataclass type to DataclassGenerator.
+
+        Args:
+            param_type: The dataclass type
+            constraints: Field constraints
+            seed: Random seed
+
+        Returns:
+            DataclassGenerator instance
+        """
+        # Lazy import to avoid circular dependency
+        from .generators import DataclassGenerator
+
+        dataclass_constraints = dict(constraints)
+        dataclass_constraints['dataclass_type'] = param_type
+
+        # Pass self as resolver so DataclassGenerator uses the same resolver instance
+        return DataclassGenerator(
+            constraints=dataclass_constraints,
+            seed=seed,
+            resolver=self,
+        )
+
+    @staticmethod
+    def _is_dataclass_type(param_type) -> bool:
+        return isinstance(param_type, type) and dataclasses.is_dataclass(param_type)
 
 
 # ============================================================================
