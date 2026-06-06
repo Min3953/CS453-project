@@ -83,6 +83,10 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
             # Handle List[T]
             return self._resolve_list(param_type, constraints, seed)
 
+        if origin is set or param_type is set:
+            # Handle Set[T]
+            return self._resolve_set(param_type, constraints, seed)
+
         if origin is dict or param_type is dict:
             # Handle Dict[K, V]
             return self._resolve_dict(param_type, constraints, seed)
@@ -130,6 +134,38 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
 
         # Pass self as resolver so ListGenerator uses the same resolver instance
         return ListGenerator(constraints=list_constraints, seed=seed, resolver=self)
+
+    def _resolve_set(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve Set[T] to SetGenerator.
+
+        Args:
+            param_type: The Set[T] type
+            constraints: Constraints including 'size' and element constraints
+            seed: Random seed
+
+        Returns:
+            SetGenerator instance
+        """
+        # Lazy import to avoid circular dependency
+        from .generators import SetGenerator
+
+        args = typing.get_args(param_type)
+        element_type = args[0] if args else str  # default to str
+
+        # Build constraints for SetGenerator
+        set_constraints = {
+            'element_type': element_type,
+            'size': constraints.get('size', 3),
+        }
+
+        # Extract element-specific constraints
+        element_constraints = {k: v for k, v in constraints.items() if k not in ['size', 'element_type']}
+        if element_constraints:
+            set_constraints['element_constraints'] = element_constraints
+
+        # Pass self as resolver so SetGenerator uses the same resolver instance
+        return SetGenerator(constraints=set_constraints, seed=seed, resolver=self)
 
     def _resolve_dict(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
         """
