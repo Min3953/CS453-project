@@ -1,6 +1,11 @@
 import autoparameterized as ap
 
-from autoparameterized.generators import DateGenerator, TupleGenerator
+from autoparameterized.generators import (
+    DateGenerator,
+    EnumGenerator,
+    LiteralGenerator,
+    TupleGenerator,
+)
 
 from autoparameterized.customizers import (
     NonEmptyCustomizer,
@@ -28,3 +33,10 @@ def test_date_generator_is_exported():
 def test_tuple_generator_is_exported():
     assert ap.TupleGenerator is TupleGenerator
     assert "TupleGenerator" in ap.__all__
+
+
+def test_enum_and_literal_generators_are_exported():
+    assert ap.EnumGenerator is EnumGenerator
+    assert ap.LiteralGenerator is LiteralGenerator
+    assert "EnumGenerator" in ap.__all__
+    assert "LiteralGenerator" in ap.__all__

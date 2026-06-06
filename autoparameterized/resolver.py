@@ -5,6 +5,7 @@ Provides registry-based type → generator mapping.
 """
 
 import dataclasses
+import enum
 import sys
 import typing
 from datetime import date, datetime
@@ -98,9 +99,17 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
             # Handle Tuple[T, ...] and Tuple[T1, T2, ...]
             return self._resolve_tuple(param_type, constraints, seed)
 
+        if origin is typing.Literal:
+            # Handle Literal[...] finite choices
+            return self._resolve_literal(param_type, constraints, seed)
+
         if self._is_typed_dict(param_type):
             # Handle TypedDict types
             return self._resolve_typed_dict(param_type, constraints, seed)
+
+        if self._is_enum_type(param_type):
+            # Handle Enum subclasses
+            return self._resolve_enum(param_type, constraints, seed)
 
         if self._is_dataclass_type(param_type):
             # Handle dataclass types
@@ -271,6 +280,46 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
 
         return TupleGenerator(constraints=tuple_constraints, seed=seed, resolver=self)
 
+    def _resolve_literal(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve Literal[...] to LiteralGenerator.
+
+        Args:
+            param_type: The Literal type
+            constraints: Constraints for the generator
+            seed: Random seed
+
+        Returns:
+            LiteralGenerator instance
+        """
+        from .generators import LiteralGenerator
+
+        return LiteralGenerator(
+            choices=typing.get_args(param_type),
+            constraints=constraints,
+            seed=seed,
+        )
+
+    def _resolve_enum(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve an Enum subclass to EnumGenerator.
+
+        Args:
+            param_type: The Enum subclass
+            constraints: Constraints for the generator
+            seed: Random seed
+
+        Returns:
+            EnumGenerator instance
+        """
+        from .generators import EnumGenerator
+
+        return EnumGenerator(
+            enum_type=param_type,
+            constraints=constraints,
+            seed=seed,
+        )
+
     def _resolve_typed_dict(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
         """
         Resolve a TypedDict type to DictGenerator.
@@ -334,6 +383,10 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
     @staticmethod
     def _is_dataclass_type(param_type) -> bool:
         return isinstance(param_type, type) and dataclasses.is_dataclass(param_type)
+
+    @staticmethod
+    def _is_enum_type(param_type) -> bool:
+        return isinstance(param_type, type) and issubclass(param_type, enum.Enum)
 
     @staticmethod
     def _is_homogeneous_tuple_args(args) -> bool:

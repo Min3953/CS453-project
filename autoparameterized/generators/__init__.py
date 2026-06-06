@@ -10,8 +10,10 @@ from .date import DateGenerator
 from .dataclass import DataclassGenerator
 from .datetime import DateTimeGenerator
 from .dict import DictGenerator
+from .enum import EnumGenerator
 from .float import FloatGenerator
 from .int import IntGenerator
+from .literal import LiteralGenerator
 from .list import ListGenerator
 from .set import SetGenerator
 from .string import StringGenerator
@@ -23,8 +25,10 @@ __all__ = [
     "DataclassGenerator",
     "DateTimeGenerator",
     "DictGenerator",
+    "EnumGenerator",
     "FloatGenerator",
     "IntGenerator",
+    "LiteralGenerator",
     "ListGenerator",
     "SetGenerator",
     "StringGenerator",
