@@ -1,6 +1,6 @@
 import autoparameterized as ap
 
-from autoparameterized.generators import DateGenerator
+from autoparameterized.generators import DateGenerator, TupleGenerator
 
 from autoparameterized.customizers import (
     NonEmptyCustomizer,
@@ -23,3 +23,8 @@ def test_additional_customizers_are_in_all():
 def test_date_generator_is_exported():
     assert ap.DateGenerator is DateGenerator
     assert "DateGenerator" in ap.__all__
+
+
+def test_tuple_generator_is_exported():
+    assert ap.TupleGenerator is TupleGenerator
+    assert "TupleGenerator" in ap.__all__

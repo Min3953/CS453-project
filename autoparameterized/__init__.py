@@ -17,6 +17,7 @@ from .generators import (
     FloatGenerator,
     IntGenerator,
     StringGenerator,
+    TupleGenerator,
 )
 
 from .customizers import (
@@ -49,6 +50,7 @@ __all__ = [
     "FloatGenerator",
     "IntGenerator",
     "StringGenerator",
+    "TupleGenerator",
     # Customizers
     "ChainCustomizer",
     "LengthCustomizer",

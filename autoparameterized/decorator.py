@@ -110,6 +110,8 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
             return [customizer.customize(elem) for elem in value]
         elif isinstance(value, set):
             return {customizer.customize(elem) for elem in value}
+        elif isinstance(value, tuple):
+            return tuple(customizer.customize(elem) for elem in value)
         else:
             return customizer.customize(value)
 
@@ -157,6 +159,8 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
                 return [customizer.customize(elem) for elem in value]
             elif isinstance(value, set):
                 return {customizer.customize(elem) for elem in value}
+            elif isinstance(value, tuple):
+                return tuple(customizer.customize(elem) for elem in value)
             else:
                 return customizer.customize(value)
 

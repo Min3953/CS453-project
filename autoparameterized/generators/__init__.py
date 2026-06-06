@@ -15,6 +15,7 @@ from .int import IntGenerator
 from .list import ListGenerator
 from .set import SetGenerator
 from .string import StringGenerator
+from .tuple import TupleGenerator
 
 __all__ = [
     "BoolGenerator",
@@ -27,4 +28,5 @@ __all__ = [
     "ListGenerator",
     "SetGenerator",
     "StringGenerator",
+    "TupleGenerator",
 ]

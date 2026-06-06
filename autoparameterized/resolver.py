@@ -94,6 +94,10 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
             # Handle Dict[K, V]
             return self._resolve_dict(param_type, constraints, seed)
 
+        if origin is tuple or param_type is tuple:
+            # Handle Tuple[T, ...] and Tuple[T1, T2, ...]
+            return self._resolve_tuple(param_type, constraints, seed)
+
         if self._is_typed_dict(param_type):
             # Handle TypedDict types
             return self._resolve_typed_dict(param_type, constraints, seed)
@@ -223,6 +227,50 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         # Pass self as resolver so DictGenerator uses the same resolver instance
         return DictGenerator(constraints=dict_constraints, seed=seed, resolver=self)
 
+    def _resolve_tuple(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve Tuple[T, ...] or Tuple[T1, T2, ...] to TupleGenerator.
+
+        Args:
+            param_type: The Tuple type
+            constraints: Constraints including 'size' and element/index constraints
+            seed: Random seed
+
+        Returns:
+            TupleGenerator instance
+        """
+        from .generators import TupleGenerator
+
+        args = typing.get_args(param_type)
+        tuple_constraints = {}
+
+        if args and not self._is_homogeneous_tuple_args(args):
+            tuple_constraints['element_types'] = args
+        else:
+            element_type = args[0] if args else str
+            tuple_constraints.update({
+                'element_type': element_type,
+                'size': constraints.get('size', 3),
+            })
+
+        if 'index_constraints' in constraints:
+            tuple_constraints['index_constraints'] = constraints['index_constraints']
+
+        element_constraints = dict(constraints.get('element_constraints', {}))
+        for key, value in constraints.items():
+            if key in {'size', 'element_type', 'element_types', 'element_constraints', 'index_constraints'}:
+                continue
+
+            if self._is_tuple_index_constraint(key):
+                tuple_constraints[key] = value
+            else:
+                element_constraints[key] = value
+
+        if element_constraints:
+            tuple_constraints['element_constraints'] = element_constraints
+
+        return TupleGenerator(constraints=tuple_constraints, seed=seed, resolver=self)
+
     def _resolve_typed_dict(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
         """
         Resolve a TypedDict type to DictGenerator.
@@ -286,6 +334,15 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
     @staticmethod
     def _is_dataclass_type(param_type) -> bool:
         return isinstance(param_type, type) and dataclasses.is_dataclass(param_type)
+
+    @staticmethod
+    def _is_homogeneous_tuple_args(args) -> bool:
+        return len(args) == 2 and args[1] is Ellipsis
+
+    @staticmethod
+    def _is_tuple_index_constraint(key: str) -> bool:
+        index, separator, _ = key.partition('__')
+        return bool(separator) and index.isdigit()
 
 
 # ============================================================================

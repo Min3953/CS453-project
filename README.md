@@ -9,7 +9,7 @@ Python implementation of automatic test parameter generation using type hints.
 ## Features
 
 - **Automatic parameter generation** from type hints
-- **Built-in generators** for common types: `int`, `str`, `float`, `bool`, `datetime`, `List`, `Set`, `Dict`, `dataclass`
+- **Built-in generators** for common types: `int`, `str`, `float`, `bool`, `date`, `datetime`, `List`, `Set`, `Tuple`, `Dict`, `dataclass`
 - **Custom generators** via `@register_generator`
 - **Customizers** to transform generated values via `@with_customizer`
 - **Constraint support** for fine-grained control over generated values
@@ -213,7 +213,7 @@ value = customizer.customize(150)  # Returns 100 (clamped)
 ## Supported Types
 
 - **Primitives**: `int`, `str`, `float`, `bool`, `date`, `datetime`
-- **Collections**: `List[T]`, `Set[T]`, `Dict[K, V]`
+- **Collections**: `List[T]`, `Set[T]`, `Tuple[T, ...]`, `Tuple[T1, T2]`, `Dict[K, V]`
 - **Complex**: `dataclass` types
 - **Nested**: `List[List[int]]`, `List[dataclass]`, etc.
 
@@ -260,6 +260,8 @@ def test_untyped_list(items: List):
 | `datetime` | Random datetime 1970-2030 | `min_value`, `max_value`, `start`, `end` |
 | `List[T]` | 3 elements of type T | `size`, `element_constraints` |
 | `Set[T]` | 3 unique elements of type T | `size`, `element_constraints` |
+| `Tuple[T, ...]` | 3 elements of type T | `size`, `element_constraints` |
+| `Tuple[T1,T2]` | Fixed-shape tuple | `element_constraints`, `<index>__<constraint>` |
 | `Dict[K,V]` | 3 key-value pairs | `size`, `key_constraints`, `value_constraints` |
 
 ## Built-in Customizers
