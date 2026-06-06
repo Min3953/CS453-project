@@ -313,8 +313,36 @@ def test_user_creation(user: User):
     assert isinstance(user.emails, list)
 ```
 
+### Nested Dataclass Generation
 
-### Domain-Driven Test Data
+```python
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class Address:
+    street: str
+    city: str
+    zipcode: str
+
+@dataclass
+class User:
+    name: str
+    age: int
+    address: Address
+    emails: List[str]
+
+@autosource
+def test_nested_dataclass_creation(user: User):
+    assert isinstance(user, User)
+    assert isinstance(user.address, Address)
+    assert isinstance(user.address.street, str)
+    assert isinstance(user.address.city, str)
+    assert isinstance(user.address.zipcode, str)
+```
+
+
+### (Recommendation) Domain-Driven Test Data Expression
 
 Express business domain concepts using Ubiquitous Language in your test data generators:
 
