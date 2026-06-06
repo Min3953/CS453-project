@@ -6,6 +6,7 @@ type-specific value generation logic.
 """
 
 from .bool import BoolGenerator
+from .date import DateGenerator
 from .dataclass import DataclassGenerator
 from .datetime import DateTimeGenerator
 from .dict import DictGenerator
@@ -17,6 +18,7 @@ from .string import StringGenerator
 
 __all__ = [
     "BoolGenerator",
+    "DateGenerator",
     "DataclassGenerator",
     "DateTimeGenerator",
     "DictGenerator",

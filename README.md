@@ -212,7 +212,7 @@ value = customizer.customize(150)  # Returns 100 (clamped)
 
 ## Supported Types
 
-- **Primitives**: `int`, `str`, `float`, `bool`, `datetime`
+- **Primitives**: `int`, `str`, `float`, `bool`, `date`, `datetime`
 - **Collections**: `List[T]`, `Set[T]`, `Dict[K, V]`
 - **Complex**: `dataclass` types
 - **Nested**: `List[List[int]]`, `List[dataclass]`, etc.
@@ -256,6 +256,7 @@ def test_untyped_list(items: List):
 | `str` | Random 10-char string | `length`, `charset` |
 | `float` | Random float 0.0-100.0 | `min_value`, `max_value` |
 | `bool` | Random boolean | `probability` |
+| `date` | Random date 1970-2030 | `min_value`, `max_value`, `start`, `end` |
 | `datetime` | Random datetime 1970-2030 | `min_value`, `max_value`, `start`, `end` |
 | `List[T]` | 3 elements of type T | `size`, `element_constraints` |
 | `Set[T]` | 3 unique elements of type T | `size`, `element_constraints` |

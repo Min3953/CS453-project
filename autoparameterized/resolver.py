@@ -7,7 +7,7 @@ Provides registry-based type → generator mapping.
 import dataclasses
 import sys
 import typing
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional, Type
 
 from .base import TypeGeneratorResolver, TypeGenerator
@@ -32,6 +32,7 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         # Load built-in generators
         from .generators import (
             BoolGenerator,
+            DateGenerator,
             DateTimeGenerator,
             FloatGenerator,
             IntGenerator,
@@ -40,6 +41,7 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
 
         self._generators = {
             bool: BoolGenerator,
+            date: DateGenerator,
             datetime: DateTimeGenerator,
             float: FloatGenerator,
             int: IntGenerator,
