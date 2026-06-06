@@ -58,22 +58,29 @@ class TestSeedBehavior:
         # Should not raise error
         assert callable(test_func)
 
-    @pytest.mark.skip(reason="Implementation pending")
     def test_same_seed_produces_same_values(self):
         """Test that same seed produces reproducible values."""
-        values1 = []
-        values2 = []
+        # With parametrize, values are pre-generated at collection time
+        # So we need to verify the parametrize marks are identical
 
         @autosource(count=3, seed=42)
         def test_func1(value: int):
-            values1.append(value)
+            pass
 
         @autosource(count=3, seed=42)
         def test_func2(value: int):
-            values2.append(value)
+            pass
 
-        # Run both (in actual pytest context)
-        # values1 should equal values2
+        # Both should have pytestmark with parametrize
+        assert hasattr(test_func1, 'pytestmark')
+        assert hasattr(test_func2, 'pytestmark')
+
+        # Extract parametrize values
+        mark1 = test_func1.pytestmark[0]
+        mark2 = test_func2.pytestmark[0]
+
+        # Same seed should produce same test cases
+        assert mark1.args[1] == mark2.args[1]  # Same values
 
 
 class TestConstraintParameter:
