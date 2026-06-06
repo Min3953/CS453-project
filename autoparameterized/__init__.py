@@ -12,6 +12,7 @@ from .base import TypeGenerator, Customizer
 from .generators import (
     BoolGenerator,
     DateTimeGenerator,
+    DictGenerator,
     FloatGenerator,
     IntGenerator,
     StringGenerator,
@@ -34,6 +35,7 @@ __all__ = [
     # Demo implementations
     "BoolGenerator",
     "DateTimeGenerator",
+    "DictGenerator",
     "FloatGenerator",
     "IntGenerator",
     "StringGenerator",

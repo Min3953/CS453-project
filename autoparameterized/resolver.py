@@ -5,6 +5,7 @@ Provides registry-based type → generator mapping.
 """
 
 import typing
+from datetime import datetime
 from typing import Optional, Type
 
 from .base import TypeGeneratorResolver, TypeGenerator
@@ -27,9 +28,18 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         To customize, use register() method after initialization.
         """
         # Load built-in generators
-        from .generators import IntGenerator, StringGenerator
+        from .generators import (
+            BoolGenerator,
+            DateTimeGenerator,
+            FloatGenerator,
+            IntGenerator,
+            StringGenerator,
+        )
 
         self._generators = {
+            bool: BoolGenerator,
+            datetime: DateTimeGenerator,
+            float: FloatGenerator,
             int: IntGenerator,
             str: StringGenerator,
         }
@@ -68,9 +78,13 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         # Check if it's a generic type (List[T], Optional[T], etc.)
         origin = typing.get_origin(param_type)
 
-        if origin is list:
+        if origin is list or param_type is list:
             # Handle List[T]
             return self._resolve_list(param_type, constraints, seed)
+
+        if origin is dict or param_type is dict:
+            # Handle Dict[K, V]
+            return self._resolve_dict(param_type, constraints, seed)
 
         # Simple type lookup
         if param_type in self._generators:
@@ -111,6 +125,55 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
 
         # Pass self as resolver so ListGenerator uses the same resolver instance
         return ListGenerator(constraints=list_constraints, seed=seed, resolver=self)
+
+    def _resolve_dict(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve Dict[K, V] to DictGenerator.
+
+        Args:
+            param_type: The Dict[K, V] type
+            constraints: Constraints including 'size' and key/value constraints
+            seed: Random seed
+
+        Returns:
+            DictGenerator instance
+        """
+        # Lazy import to avoid circular dependency
+        from .generators import DictGenerator
+
+        args = typing.get_args(param_type)
+        key_type = args[0] if args else str
+        value_type = args[1] if len(args) > 1 else str
+
+        dict_constraints = {
+            'key_type': key_type,
+            'value_type': value_type,
+            'size': constraints.get('size', 3),
+        }
+
+        key_constraints = {
+            key[len('key_'):]: value
+            for key, value in constraints.items()
+            if key.startswith('key_') and key != 'key_constraints'
+        }
+        value_constraints = {
+            key[len('value_'):]: value
+            for key, value in constraints.items()
+            if key.startswith('value_') and key != 'value_constraints'
+        }
+
+        if 'key_constraints' in constraints:
+            key_constraints.update(constraints['key_constraints'])
+        if 'value_constraints' in constraints:
+            value_constraints.update(constraints['value_constraints'])
+
+        if key_constraints:
+            dict_constraints['key_constraints'] = key_constraints
+        if value_constraints:
+            dict_constraints['value_constraints'] = value_constraints
+
+        # Pass self as resolver so DictGenerator uses the same resolver instance
+        return DictGenerator(constraints=dict_constraints, seed=seed, resolver=self)
 
 
 # ============================================================================
