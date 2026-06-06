@@ -8,7 +8,6 @@ Core interfaces are defined, implementation is split among team members.
 # Base interfaces (COMPLETE)
 from .base import TypeGenerator, Customizer
 
-# Demo implementations (REFERENCE ONLY)
 from .generators import (
     BoolGenerator,
     DataclassGenerator,
@@ -17,19 +16,18 @@ from .generators import (
     FloatGenerator,
     IntGenerator,
     StringGenerator,
-    RangeCustomizer,
 )
 
 from .customizers import (
-    LengthCustomizer,
-    TransformCustomizer,
     ChainCustomizer,
-    RegexStringCustomizer,
-    TypeCastCustomizer,
+    LengthCustomizer,
     NonEmptyCustomizer,
+    RangeCustomizer,
+    RegexStringCustomizer,
+    TransformCustomizer,
+    TypeCastCustomizer,
 )
 
-# Core decorator (SKELETON - TO BE COMPLETED)
 from .decorator import (
     autosource,
     register_generator,
@@ -42,7 +40,6 @@ __all__ = [
     # Base interfaces
     "TypeGenerator",
     "Customizer",
-    # Demo implementations
     "BoolGenerator",
     "DataclassGenerator",
     "DateTimeGenerator",
@@ -50,14 +47,14 @@ __all__ = [
     "FloatGenerator",
     "IntGenerator",
     "StringGenerator",
-    "RangeCustomizer",
-    "LengthCustomizer",
-    "TransformCustomizer",
+    # Customizers
     "ChainCustomizer",
-    "RegexStringCustomizer",
-    "TypeCastCustomizer",
+    "LengthCustomizer",
     "NonEmptyCustomizer",
-    # Decorators
+    "RangeCustomizer",
+    "RegexStringCustomizer",
+    "TransformCustomizer",
+    "TypeCastCustomizer",
     "autosource",
     "register_generator",
     "with_customizer",
