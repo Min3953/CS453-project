@@ -9,9 +9,9 @@ import random
 import pytest
 from typing import Set
 
-from autoparameterized.base import TypeGenerator
+from autoparameterized.base import TypeGenerator, Customizer
 from autoparameterized.generators import SetGenerator
-from autoparameterized.decorator import autosource, register_generator
+from autoparameterized.decorator import autosource, register_generator, with_customizer
 
 
 def test_if_sut_generates_int_set_correctly():
@@ -195,3 +195,21 @@ def test_if_sut_generates_set_of_elements_with_given_generator_correctly(numbers
         assert isinstance(actual, int)
         assert actual > 0
         assert (actual % 2) == 1
+
+
+class TripleCustomizer(Customizer):
+    """Customizer that triples the input value."""
+    def customize(self, value):
+        return value * 3
+
+
+@autosource(numbers__min_value=1, numbers__max_value=10)
+@with_customizer('numbers', TripleCustomizer())
+def test_if_sut_generates_set_with_customizer_correctly(numbers: Set[int]):
+    assert isinstance(numbers, set)
+    assert len(numbers) == 3
+    for actual in numbers:
+        assert isinstance(actual, int)
+        # Original range is 1-10, tripled should be 3-30
+        assert 3 <= actual <= 30
+        assert (actual % 3) == 0  # All tripled values are divisible by 3

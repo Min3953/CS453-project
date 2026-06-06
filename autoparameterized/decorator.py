@@ -98,6 +98,21 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
         for type_cls, gen_class in func._custom_generators.items():
             resolver.register(type_cls, gen_class)
 
+    # Helper to apply customizers to generated values
+    def apply_customizers(param_name: str, value):
+        if not hasattr(func, '_customizers') or param_name not in func._customizers:
+            return value
+
+        customizer = func._customizers[param_name]
+
+        # For collections, apply customizer to each element
+        if isinstance(value, list):
+            return [customizer.customize(elem) for elem in value]
+        elif isinstance(value, set):
+            return {customizer.customize(elem) for elem in value}
+        else:
+            return customizer.customize(value)
+
     # For count=1, create dual-mode wrapper that supports both direct calls and pytest parametrize
     if count == 1:
         import functools
@@ -114,7 +129,8 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
                     param_type = type_hints[param_name]
                     constraints = _parse_constraints_for_param(param_name, param_constraints)
                     generator = resolver.resolve(param_type, constraints, seed)
-                    generated_kwargs[param_name] = generator.generate()
+                    value = generator.generate()
+                    generated_kwargs[param_name] = apply_customizers(param_name, value)
                 return func(**generated_kwargs)
 
         # Generate one test case for pytest
@@ -123,12 +139,27 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
             param_type = type_hints[param_name]
             constraints = _parse_constraints_for_param(param_name, param_constraints)
             generator = resolver.resolve(param_type, constraints, seed)
-            values.append(generator.generate())
+            value = generator.generate()
+            values.append(apply_customizers(param_name, value))
         test_cases = [tuple(values) if len(values) > 1 else values[0]]
 
         # Apply parametrize to the dual-mode wrapper
         return pytest.mark.parametrize(','.join(param_names), test_cases)(dual_mode_wrapper)
     else:
+        # Helper to apply customizers (same as above but for count > 1)
+        def apply_customizers_count(param_name: str, value):
+            if not hasattr(func, '_customizers') or param_name not in func._customizers:
+                return value
+
+            customizer = func._customizers[param_name]
+
+            if isinstance(value, list):
+                return [customizer.customize(elem) for elem in value]
+            elif isinstance(value, set):
+                return {customizer.customize(elem) for elem in value}
+            else:
+                return customizer.customize(value)
+
         # For count > 1, generate N test cases
         test_cases = []
         for i in range(count):
@@ -138,7 +169,8 @@ def _create_wrapper(func: Callable, count: int, seed: Optional[int], param_const
                 param_type = type_hints[param_name]
                 constraints = _parse_constraints_for_param(param_name, param_constraints)
                 generator = resolver.resolve(param_type, constraints, effective_seed)
-                values.append(generator.generate())
+                value = generator.generate()
+                values.append(apply_customizers_count(param_name, value))
             test_cases.append(tuple(values) if len(values) > 1 else values[0])
 
         # Apply pytest.mark.parametrize

@@ -10,9 +10,9 @@ from dataclasses import dataclass
 import pytest
 from typing import List
 
-from autoparameterized.base import TypeGenerator
+from autoparameterized.base import TypeGenerator, Customizer
 from autoparameterized.generators import ListGenerator
-from autoparameterized.decorator import autosource, register_generator
+from autoparameterized.decorator import autosource, register_generator, with_customizer
 
 
 def test_if_sut_generates_int_list_correctly():
@@ -216,3 +216,21 @@ def test_if_sut_generates_list_of_elements_with_given_generator_correctly(number
         assert isinstance(actual, int)
         assert actual >= 0
         assert (actual % 2) == 0
+
+
+class DoubleCustomizer(Customizer):
+    """Customizer that doubles the input value."""
+    def customize(self, value):
+        return value * 2
+
+
+@autosource(numbers__min_value=1, numbers__max_value=10)
+@with_customizer('numbers', DoubleCustomizer())
+def test_if_sut_generates_list_with_customizer_correctly(numbers: List[int]):
+    assert isinstance(numbers, list)
+    assert len(numbers) == 3
+    for actual in numbers:
+        assert isinstance(actual, int)
+        # Original range is 1-10, doubled should be 2-20
+        assert 2 <= actual <= 20
+        assert (actual % 2) == 0  # All doubled values are even
