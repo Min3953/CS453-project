@@ -10,15 +10,38 @@ class DataclassGenerator(TypeGenerator):
     """
     Generator for dataclass instances.
 
+    The dataclass type is passed as a parameter, not in constraints.
+    Type information is automatically extracted from the dataclass definition.
+
+    Args:
+        dataclass_type: The dataclass type to instantiate
+        constraints: Field constraints (format: field__constraint=value)
+        seed: Random seed for reproducibility
+        resolver: Type resolver for nested types
+
     Constraints:
-        - dataclass_type: Dataclass type to instantiate
         - field_constraints: Per-field constraints keyed by field name
         - field_values: Explicit field values keyed by field name
+        - Field constraints can also be provided as '<field>__<constraint>'
 
-    Field constraints can also be provided as '<field>__<constraint>'.
+    Example:
+        @dataclass
+        class User:
+            name: str
+            age: int
+
+        gen = DataclassGenerator(
+            dataclass_type=User,
+            constraints={'name__length': 5, 'age__min_value': 18},
+            seed=42
+        )
     """
 
-    def __init__(self, constraints: dict = None, seed: int = None, resolver=None):
+    def __init__(self, dataclass_type, constraints: dict = None, seed: int = None, resolver=None):
+        if not self._is_dataclass_type(dataclass_type):
+            raise ValueError(f"{dataclass_type} must be a dataclass type")
+
+        self.dataclass_type = dataclass_type
         super().__init__(constraints, seed)
 
         if resolver is None:
@@ -27,12 +50,7 @@ class DataclassGenerator(TypeGenerator):
         self.resolver = resolver
 
     def generate(self):
-        dataclass_type = self.constraints.get(
-            'dataclass_type',
-            self.constraints.get('target_type'),
-        )
-        if not self._is_dataclass_type(dataclass_type):
-            raise ValueError("dataclass_type must be a dataclass type")
+        dataclass_type = self.dataclass_type
 
         field_values = self.constraints.get('field_values', {})
         type_hints = self._type_hints_for(dataclass_type)

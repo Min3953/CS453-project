@@ -24,8 +24,8 @@ class GeneratedAccount:
 
 def test_dataclass_generator_respects_field_types_and_constraints():
     generator = DataclassGenerator(
+        dataclass_type=GeneratedProfile,
         constraints={
-            'dataclass_type': GeneratedProfile,
             'field_constraints': {
                 'name': {'length': 4},
                 'age': {'min_value': 18, 'max_value': 30},
@@ -45,8 +45,8 @@ def test_dataclass_generator_respects_field_types_and_constraints():
 
 def test_dataclass_generator_accepts_flat_field_constraints():
     generator = DataclassGenerator(
+        dataclass_type=GeneratedProfile,
         constraints={
-            'dataclass_type': GeneratedProfile,
             'name__length': 4,
             'age__min_value': 18,
             'age__max_value': 30,
@@ -62,8 +62,8 @@ def test_dataclass_generator_accepts_flat_field_constraints():
 
 def test_dataclass_generator_generates_nested_values():
     generator = DataclassGenerator(
+        dataclass_type=GeneratedAccount,
         constraints={
-            'dataclass_type': GeneratedAccount,
             'profile__name__length': 5,
             'profile__age__min_value': 20,
             'profile__age__max_value': 40,
@@ -92,17 +92,15 @@ def test_dataclass_generator_generates_nested_values():
 
 
 def test_dataclass_generator_is_reproducible_with_seed():
-    constraints = {'dataclass_type': GeneratedProfile}
-
-    first = DataclassGenerator(constraints=constraints, seed=123).generate()
-    second = DataclassGenerator(constraints=constraints, seed=123).generate()
+    first = DataclassGenerator(dataclass_type=GeneratedProfile, seed=123).generate()
+    second = DataclassGenerator(dataclass_type=GeneratedProfile, seed=123).generate()
 
     assert first == second
 
 
-def test_dataclass_generator_rejects_missing_dataclass_type():
+def test_dataclass_generator_rejects_invalid_dataclass_type():
     with pytest.raises(ValueError):
-        DataclassGenerator().generate()
+        DataclassGenerator(dataclass_type=str)  # str is not a dataclass
 
 
 def test_resolver_resolves_dataclass_type():
