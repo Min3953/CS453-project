@@ -204,7 +204,7 @@ def test_list_customization(numbers: List[int]):
 Apply customizers manually:
 
 ```python
-from autoparameterized.generators import RangeCustomizer
+from autoparameterized.customizers import RangeCustomizer
 
 customizer = RangeCustomizer(min_value=0, max_value=100)
 value = customizer.customize(150)  # Returns 100 (clamped)
