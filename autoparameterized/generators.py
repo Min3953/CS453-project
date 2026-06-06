@@ -142,7 +142,22 @@ class FloatGenerator(TypeGenerator):
         return random.uniform(min_val, max_val)
 
 
-# TODO: BoolGenerator - random boolean values
+class BoolGenerator(TypeGenerator):
+    """
+    Generator for boolean values.
+
+    Constraints:
+        - probability: Probability of generating True (default: 0.5)
+    """
+
+    def generate(self) -> bool:
+        if self.seed is not None:
+            random.seed(self.seed)
+
+        probability = self.constraints.get('probability', 0.5)
+        return random.random() < probability
+
+
 # TODO: DictGenerator - generate dictionaries
 # TODO: DateTimeGenerator - generate datetime objects
 # TODO: DataclassGenerator - recursively generate dataclass instances
