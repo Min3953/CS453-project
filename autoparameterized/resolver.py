@@ -5,6 +5,7 @@ Provides registry-based type → generator mapping.
 """
 
 import dataclasses
+import sys
 import typing
 from datetime import datetime
 from typing import Optional, Type
@@ -90,6 +91,10 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         if origin is dict or param_type is dict:
             # Handle Dict[K, V]
             return self._resolve_dict(param_type, constraints, seed)
+
+        if self._is_typed_dict(param_type):
+            # Handle TypedDict types
+            return self._resolve_typed_dict(param_type, constraints, seed)
 
         if self._is_dataclass_type(param_type):
             # Handle dataclass types
@@ -216,6 +221,29 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         # Pass self as resolver so DictGenerator uses the same resolver instance
         return DictGenerator(constraints=dict_constraints, seed=seed, resolver=self)
 
+    def _resolve_typed_dict(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
+        """
+        Resolve a TypedDict type to DictGenerator.
+
+        Args:
+            param_type: The TypedDict type
+            constraints: Field constraints
+            seed: Random seed
+
+        Returns:
+            DictGenerator instance
+        """
+        # Lazy import to avoid circular dependency
+        from .generators import DictGenerator
+
+        # Pass typed_dict directly, not through constraints
+        return DictGenerator(
+            typed_dict=param_type,
+            constraints=constraints,
+            seed=seed,
+            resolver=self,
+        )
+
     def _resolve_dataclass(self, param_type, constraints: dict, seed: Optional[int]) -> TypeGenerator:
         """
         Resolve a dataclass type to DataclassGenerator.
@@ -231,14 +259,26 @@ class RegistryBasedGeneratorResolver(TypeGeneratorResolver):
         # Lazy import to avoid circular dependency
         from .generators import DataclassGenerator
 
-        dataclass_constraints = dict(constraints)
-        dataclass_constraints['dataclass_type'] = param_type
-
-        # Pass self as resolver so DataclassGenerator uses the same resolver instance
+        # Pass dataclass_type directly, not through constraints
         return DataclassGenerator(
-            constraints=dataclass_constraints,
+            dataclass_type=param_type,
+            constraints=constraints,
             seed=seed,
             resolver=self,
+        )
+
+    @staticmethod
+    def _is_typed_dict(cls) -> bool:
+        """Check if a class is a TypedDict."""
+        # Python 3.10+: typing.is_typeddict()
+        if sys.version_info >= (3, 10):
+            return typing.is_typeddict(cls)
+
+        # Python 3.8-3.9: Check for __annotations__ and __total__
+        return (
+            isinstance(cls, type)
+            and hasattr(cls, '__annotations__')
+            and hasattr(cls, '__total__')
         )
 
     @staticmethod
